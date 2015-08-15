@@ -1,0 +1,14 @@
+language: rust
+rust:
+  - nightly
+# We are using unstable features.
+#  - beta
+#  - stable
+script:
+  - cargo build --verbose
+  - cargo test --verbose
+notifications:
+  email:
+    recipients:
+      - franklinchen@franklinchen.com
+    on_success: never
