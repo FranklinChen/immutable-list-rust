@@ -30,6 +30,11 @@ impl<T> Cons<T> {
 //TODO macro for list syntax.
 
 impl<T> List<T> {
+    #[inline(always)]
+    pub fn as_ref(&self) -> Option<&Rc<Cons<T>>> {
+        self.0.as_ref()
+    }
+
     /// Just bump up the reference count.
     #[inline(always)]
     pub fn clone(&self) -> Self {
@@ -38,12 +43,12 @@ impl<T> List<T> {
 
     #[inline(always)]
     pub fn head(&self) -> Option<&T> {
-        self.0.as_ref().map(|r| &r.elem)
+        self.as_ref().map(|r| &r.elem)
     }
 
     #[inline(always)]
     pub fn tail(&self) -> Option<&List<T>> {
-        self.0.as_ref().map(|r| &r.next)
+        self.as_ref().map(|r| &r.next)
     }
 
     /// Bump up reference count when returning the tail of the list.
@@ -77,6 +82,7 @@ impl<T> List<T> {
     }
 
     /// Danger of stack overflow because of non-tail recursion.
+    #[inline(always)]
     pub fn map_recursive<U, F>(&self, f: F) -> List<U>
         where F: Fn(&T) -> U
     {
@@ -90,7 +96,7 @@ impl<T> List<T> {
     fn map_recursive_helper<U, F>(&self, f: &F) -> List<U>
         where F: Fn(&T) -> U
     {
-        match self.0.as_ref() {
+        match self.as_ref() {
             None => List::empty(),
             Some(r) => r.next.map_recursive_helper(f).into_cons(f(&r.elem))
         }
@@ -100,7 +106,7 @@ impl<T> List<T> {
     pub fn map<U, F>(&self, f: F) -> List<U>
         where F: Fn(&T) -> U
     {
-        match self.0.as_ref() {
+        match self.as_ref() {
             None => List::empty(),
             Some(r) => {
                 // New Cons, with an initially empty tail.
@@ -115,7 +121,7 @@ impl<T> List<T> {
 
                     let mut self_remaining = &r.next;
 
-                    while let Some(r) = self_remaining.0.as_ref() {
+                    while let Some(r) = self_remaining.as_ref() {
                         let mut new_rc =
                             Rc::new(Cons::singleton(f(&r.elem)));
 
@@ -144,9 +150,9 @@ impl<T: Clone> List<T> {
     /// Append a copy of `xs` to `ys`, preserving `ys` through structural
     /// sharing.
     pub fn append(&self, other: &List<T>) -> List<T> {
-        match self.0.as_ref() {
+        match self.as_ref() {
             None =>
-                match other.0.as_ref() {
+                match other.as_ref() {
                     None =>
                         List::empty(),
                     Some(r) =>
@@ -167,7 +173,7 @@ impl<T> List<T> {
     /// Use unsafe hacking! But it is unlikely `Rc` will be anything
     /// other than a pointer to stuff, so this should be OK.
     pub fn same(&self, other: &List<T>) -> bool {
-        match (self.0.as_ref(), other.0.as_ref()) {
+        match (self.as_ref(), other.as_ref()) {
             (Some(self_rc), Some(other_rc)) =>
                 unsafe {
                     rc_utils::as_raw(self_rc) == rc_utils::as_raw(other_rc)
