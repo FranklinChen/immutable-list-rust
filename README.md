@@ -12,6 +12,16 @@ Some notable entertaining features:
 
 I welcome any suggestions on how to do some of this stuff in a less nasty way.
 
+## Inspiration
+
+I was inspired to do this little project by Alexis Beingessner's boo
+on ["Too Many Lists"](http://cglab.ca/~abeinges/blah/too-many-lists/book/) (and copied some of the
+starter code from its
+[repo](https://github.com/Gankro/too-many-lists)), as well as his book
+on
+[unsafe Rust](https://doc.rust-lang.org/nightly/nomicon/). Fantastic
+resources for anyone wanting to get deep into Rust!
+
 ## Please don't overuse linked lists
 
 I should note that this little project is mostly for instruction and
