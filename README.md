@@ -17,9 +17,13 @@ I welcome any suggestions on how to do some of this stuff in a less nasty way.
 I should note that this little project is mostly for instruction and
 entertainment. I have not yet personally encountered a situation in
 which I wanted to use an immutable, persistent list in Rust. Rust is
-not Clojure or Haskell. Use other data structures when storing
-something for the purpose of lookup later. If not caring about
-lookup, and only caring about *pulling*,
+not Clojure or Haskell or OCaml or Scala or Erlang or
+(...), so the list is usually not the best data structure to use.
+
+(In those other languages also, use other data structures when storing
+a lot of data for the purpose of lookup or combination later.)
+
+If *not* caring about lookup, and only caring about *pulling*,
 
 - `Vec` is the way to store stuff
 - `Iterator` is a great trait to implement as needed
