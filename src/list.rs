@@ -30,14 +30,26 @@ impl<T> Cons<T> {
 //TODO macro for list syntax.
 
 impl<T> List<T> {
+    /// Just bump up the reference count.
+    #[inline(always)]
+    pub fn clone(&self) -> Self {
+        List(self.0.clone())
+    }
+
     #[inline(always)]
     pub fn head(&self) -> Option<&T> {
         self.0.as_ref().map(|r| &r.elem)
     }
 
     #[inline(always)]
-    pub fn tail(&self) -> Option<List<T>> {
-        self.0.as_ref().map(|r| List(r.next.0.clone()))
+    pub fn tail(&self) -> Option<&List<T>> {
+        self.0.as_ref().map(|r| &r.next)
+    }
+
+    /// Bump up reference count when returning the tail of the list.
+    #[inline(always)]
+    pub fn into_tail(&self) -> Option<List<T>> {
+        self.tail().map(|list| list.clone())
     }
 
     #[inline(always)]
@@ -46,10 +58,17 @@ impl<T> List<T> {
     }
 
     /// OO API is backwards from FP, but does same thing, prepending.
+    ///
+    /// This variant does not take ownership of the new tail.
     #[inline(always)]
     pub fn cons(&self, elem: T) -> Self {
-        List(Some(Rc::new(Cons::new(elem,
-                                    List(self.0.clone())))))
+        List(Some(Rc::new(Cons::new(elem, self.clone()))))
+    }
+
+    /// Special version of cons that takes ownership of the new tail.
+    #[inline(always)]
+    pub fn into_cons(self, elem: T) -> Self {
+        List(Some(Rc::new(Cons::new(elem, self))))
     }
 
     #[inline(always)]
@@ -65,12 +84,15 @@ impl<T> List<T> {
     }
 
     /// Danger of stack overflow because of non-tail recursion.
+    ///
+    /// Use `into_cons` because nobody else sees the intermediate
+    /// list.
     fn map_recursive_helper<U, F>(&self, f: &F) -> List<U>
         where F: Fn(&T) -> U
     {
         match self.0.as_ref() {
             None => List::empty(),
-            Some(r) => r.next.map_recursive_helper(f).cons(f(&r.elem))
+            Some(r) => r.next.map_recursive_helper(f).into_cons(f(&r.elem))
         }
     }
 
@@ -133,8 +155,7 @@ impl<T: Clone> List<T> {
                 },
             Some(r) =>
                 // Recursive append our tail, then prepend a clone of elem.
-                List::cons(&r.next.append(other),
-                           r.elem.clone())
+                r.next.append(other).into_cons(r.elem.clone())
         }
     }
 
@@ -163,20 +184,32 @@ mod test {
 
     /// [0, 1, 2]
     fn list_012() -> List<usize> {
-        List::empty().cons(2).cons(1).cons(0)
+        List::empty()
+            .into_cons(2)
+            .into_cons(1)
+            .into_cons(0)
     }
 
     /// [3, 4, 5]
     fn list_345() -> List<usize> {
-        List::empty().cons(5).cons(4).cons(3)
+        List::empty()
+            .into_cons(5)
+            .into_cons(4)
+            .into_cons(3)
     }
 
     fn list_012345() -> List<usize> {
-        List::empty().cons(5).cons(4).cons(3).cons(2).cons(1).cons(0)
+        List::empty()
+            .into_cons(5)
+            .into_cons(4)
+            .into_cons(3)
+            .into_cons(2)
+            .into_cons(1)
+            .into_cons(0)
     }
 
     #[test]
-    fn sharing_compiles() {
+    fn sharing_with_immutable_cons_compiles() {
         let list1 = list_012();
         let _x = list1.cons(100);
         let _y = list1.cons(200);
@@ -203,8 +236,8 @@ mod test {
     }
 
     impl<T> List<T> {
-        fn unsafe_tail(&self) -> List<T> {
-            self.tail().unwrap()
+        fn unsafe_into_tail(&self) -> List<T> {
+            self.into_tail().unwrap()
         }
     }
 
@@ -222,9 +255,9 @@ mod test {
 
         // Walk over to the sharing point.
         let sublist = result
-            .unsafe_tail()
-            .unsafe_tail()
-            .unsafe_tail();
+            .unsafe_into_tail()
+            .unsafe_into_tail()
+            .unsafe_into_tail();
 
         assert_eq!(sublist, list2);
 
