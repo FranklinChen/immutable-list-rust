@@ -36,8 +36,8 @@ impl<T> List<T> {
     }
 
     #[inline(always)]
-    pub fn tail(&self) -> Option<&List<T>> {
-        self.0.as_ref().map(|r| &r.next)
+    pub fn tail(&self) -> Option<List<T>> {
+        self.0.as_ref().map(|r| List(r.next.0.clone()))
     }
 
     #[inline(always)]
@@ -47,8 +47,9 @@ impl<T> List<T> {
 
     /// OO API is backwards from FP, but does same thing, prepending.
     #[inline(always)]
-    pub fn cons(self, elem: T) -> Self {
-        List(Some(Rc::new(Cons::new(elem, self))))
+    pub fn cons(&self, elem: T) -> Self {
+        List(Some(Rc::new(Cons::new(elem,
+                                    List(self.0.clone())))))
     }
 
     #[inline(always)]
@@ -132,7 +133,7 @@ impl<T: Clone> List<T> {
                 },
             Some(r) =>
                 // Recursive append our tail, then prepend a clone of elem.
-                List::cons(r.next.append(other),
+                List::cons(&r.next.append(other),
                            r.elem.clone())
         }
     }
@@ -175,6 +176,13 @@ mod test {
     }
 
     #[test]
+    fn sharing_compiles() {
+        let list1 = list_012();
+        let _x = list1.cons(100);
+        let _y = list1.cons(200);
+    }
+
+    #[test]
     fn equal_by_structure() {
         let list1 = list_012();
         let list2 = list_012();
@@ -195,7 +203,7 @@ mod test {
     }
 
     impl<T> List<T> {
-        fn unsafe_tail(&self) -> &List<T> {
+        fn unsafe_tail(&self) -> List<T> {
             self.tail().unwrap()
         }
     }
@@ -213,15 +221,15 @@ mod test {
         assert!(!result.same(&fresh));
 
         // Walk over to the sharing point.
-        let sublist_ref = result
+        let sublist = result
             .unsafe_tail()
             .unsafe_tail()
             .unsafe_tail();
 
-        assert_eq!(*sublist_ref, list2);
+        assert_eq!(sublist, list2);
 
         // Sublist within result is the same as original second list.
-        assert!(sublist_ref.same(&list2));
+        assert!(sublist.same(&list2));
     }
 
     #[test]
@@ -243,5 +251,4 @@ mod test {
 
         assert_eq!(result, list2);
     }
-
 }
