@@ -92,27 +92,22 @@ impl<T> List<T> {
 
                     let mut self_remaining = &r.next;
 
-                    loop {
-                        match self_remaining.0.as_ref() {
-                            None => break,
-                            Some(r) => {
-                                let mut new_rc =
-                                    Rc::new(Cons::singleton(f(&r.elem)));
+                    while let Some(r) = self_remaining.0.as_ref() {
+                        let mut new_rc =
+                            Rc::new(Cons::singleton(f(&r.elem)));
 
-                                let next_ptr = unsafe {
-                                    rc_utils::to_value_ptr(&mut new_rc)
-                                };
+                        let next_ptr = unsafe {
+                            rc_utils::to_value_ptr(&mut new_rc)
+                        };
 
-                                // Patch in the new tail.
-                                unsafe {
-                                    (*current_ptr).next = List(Some(new_rc));
-                                }
-
-                                current_ptr = next_ptr;
-
-                                self_remaining = &r.next;
-                            }
+                        // Patch in the new tail.
+                        unsafe {
+                            (*current_ptr).next = List(Some(new_rc));
                         }
+
+                        current_ptr = next_ptr;
+
+                        self_remaining = &r.next;
                     }
                 }
 
