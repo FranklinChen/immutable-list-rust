@@ -2,7 +2,6 @@
 
 // For unsafe `Rc` hacking.
 #![feature(nonzero)]
-#![feature(rc_unique)]
 #![feature(core)]
 
 extern crate core;

@@ -1,14 +1,15 @@
 language: rust
-rust:
-  - nightly
-# We are using unstable features.
-#  - beta
-#  - stable
+matrix:
+  include:
+    - rust: "nightly"
+      env: TEST_SUITE=suite_nightly
+#    - rust: "beta"
+#      env: TEST_SUITE=suite_beta
+#    - rust: "stable"
+#      env: TEST_SUITE=suite_stable
 script:
   - cargo build --verbose
   - cargo test --verbose
-notifications:
-  email:
-    recipients:
-      - franklinchen@franklinchen.com
-    on_success: never
+  - if [ "$TEST_SUITE" = "suite_nightly" ]; then
+      cargo bench --verbose;
+    fi
