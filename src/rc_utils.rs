@@ -21,27 +21,30 @@ struct Rc<T: ?Sized> {
     _ptr: NonZero<*mut RcBox<T>>,
 }
 
-/// Get at the internals.
+/// Whether two `Rc` are the same pointer underneath.
 #[inline(always)]
-pub unsafe fn as_raw<T>(r: &rc::Rc<T>) -> *mut RcBox<T> {
-    let internal_rc_ref: &Rc<T> = mem::transmute(r);
-    *internal_rc_ref._ptr
+pub fn eq<T>(r1: &rc::Rc<T>, r2: &rc::Rc<T>) -> bool {
+    unsafe {
+        as_raw(r1) == as_raw(r2)
+    }
 }
 
-/// For use only if you know that the `Rc` is unique. We bypass
-/// checking for that.
+/// Get the raw pointer stored inside an `Rc`.
 #[inline(always)]
-pub unsafe fn to_value_ptr<T>(r: &mut rc::Rc<T>) -> *mut T {
-    let box_ptr = as_raw(r);
-    let value_ref: &mut T = &mut (*box_ptr).value;
-    value_ref as *mut T
+unsafe fn as_raw<T>(r: &rc::Rc<T>) -> *mut RcBox<T> {
+    *mem::transmute::<&rc::Rc<T>, &Rc<T>>(r)
+        ._ptr
 }
 
-/// A safe converter that does a runtime check for uniqueness.
-/// Useful for mutating within an `Rc` after construction unsafely
-/// to keep the type of the container immutable.
+/// For use only if you know that the `Rc` is unique.
+#[inline(always)]
+pub unsafe fn get_mut<T>(r: &mut rc::Rc<T>) -> *mut T {
+    &mut (*as_raw(r)).value
+}
+
+/// The safe version of `get_mut_unsafe`.
 #[allow(dead_code)]
 #[inline(always)]
-pub fn safe_to_value_ptr<T>(r: &mut rc::Rc<T>) -> *mut T {
-    rc::Rc::get_mut(r).unwrap() as *mut T
+pub fn get_mut_unwrap<T>(r: &mut rc::Rc<T>) -> *mut T {
+    rc::Rc::get_mut(r).unwrap()
 }

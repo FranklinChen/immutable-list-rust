@@ -116,7 +116,7 @@ impl<T> List<T> {
                     // Pointer to next in current cell.
                     // We want to write in a new next.
                     let mut current_ptr = unsafe {
-                        rc_utils::to_value_ptr(&mut first_rc)
+                        rc_utils::get_mut(&mut first_rc)
                     };
 
                     let mut self_remaining = &r.next;
@@ -126,7 +126,7 @@ impl<T> List<T> {
                             Rc::new(Cons::singleton(f(&r.elem)));
 
                         let next_ptr = unsafe {
-                            rc_utils::to_value_ptr(&mut new_rc)
+                            rc_utils::get_mut(&mut new_rc)
                         };
 
                         // Patch in the new tail.
@@ -174,10 +174,7 @@ impl<T> List<T> {
     /// other than a pointer to stuff, so this should be OK.
     pub fn same(&self, other: &List<T>) -> bool {
         match (self.as_ref(), other.as_ref()) {
-            (Some(self_rc), Some(other_rc)) =>
-                unsafe {
-                    rc_utils::as_raw(self_rc) == rc_utils::as_raw(other_rc)
-                },
+            (Some(self_rc), Some(other_rc)) => rc_utils::eq(self_rc, other_rc),
             (None, None) => true,
             (_, _) => false,
         }
