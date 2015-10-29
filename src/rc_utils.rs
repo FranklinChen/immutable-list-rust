@@ -5,7 +5,6 @@ use std::rc;
 /// For unsafe memory hacking.
 use std::mem;
 
-use core::nonzero::NonZero;
 use std::cell::Cell;
 
 /// Evil: copied from [source](https://doc.rust-lang.org/nightly/src/alloc/rc.rs.html#171).
@@ -13,12 +12,12 @@ use std::cell::Cell;
 pub struct RcBox<T: ?Sized> {
     strong: Cell<usize>,
     weak: Cell<usize>,
-    value: T
+    value: T,
 }
 
-/// Evil: copied from [source](https://doc.rust-lang.org/nightly/src/alloc/rc.rs.html#183).
+/// Evil: copied from [source](https://doc.rust-lang.org/nightly/src/alloc/rc.rs.html#183) except omitting the `Shared` and just faking a raw pointer.
 struct Rc<T: ?Sized> {
-    _ptr: NonZero<*mut RcBox<T>>,
+    _ptr: *mut RcBox<T>,
 }
 
 /// Whether two `Rc` are the same pointer underneath.
@@ -32,7 +31,7 @@ pub fn eq<T>(r1: &rc::Rc<T>, r2: &rc::Rc<T>) -> bool {
 /// Get the raw pointer stored inside an `Rc`.
 #[inline(always)]
 unsafe fn as_raw<T>(r: &rc::Rc<T>) -> *mut RcBox<T> {
-    *mem::transmute::<&rc::Rc<T>, &Rc<T>>(r)
+    mem::transmute::<&rc::Rc<T>, &Rc<T>>(r)
         ._ptr
 }
 
@@ -42,7 +41,7 @@ pub unsafe fn get_mut<T>(r: &mut rc::Rc<T>) -> *mut T {
     &mut (*as_raw(r)).value
 }
 
-/// The safe version of `get_mut_unsafe`.
+/// The safe version of `get_mut_unsafe` does a reference count check.
 #[allow(dead_code)]
 #[inline(always)]
 pub fn get_mut_unwrap<T>(r: &mut rc::Rc<T>) -> *mut T {
