@@ -7,7 +7,7 @@ use std::mem;
 
 use std::cell::Cell;
 
-/// Evil: copied from [source](https://doc.rust-lang.org/nightly/src/alloc/rc.rs.html#171).
+/// Evil: copied from [source](https://doc.rust-lang.org/src/alloc/rc.rs.html#174-178).
 #[allow(dead_code)]
 pub struct RcBox<T: ?Sized> {
     strong: Cell<usize>,
@@ -15,7 +15,7 @@ pub struct RcBox<T: ?Sized> {
     value: T,
 }
 
-/// Evil: copied from [source](https://doc.rust-lang.org/nightly/src/alloc/rc.rs.html#183) except omitting the `Shared` and just faking a raw pointer.
+/// Evil: copied from [source](https://doc.rust-lang.org/src/alloc/rc.rs.html#185-190) except omitting the `Shared` and just faking a raw pointer.
 struct Rc<T: ?Sized> {
     _ptr: *mut RcBox<T>,
 }
@@ -41,7 +41,7 @@ pub unsafe fn get_mut<T>(r: &mut rc::Rc<T>) -> *mut T {
     &mut (*as_raw(r)).value
 }
 
-/// The safe version of `get_mut_unsafe` does a reference count check.
+/// The safe version of `get_mut` does a reference count check.
 #[allow(dead_code)]
 #[inline(always)]
 pub fn get_mut_unwrap<T>(r: &mut rc::Rc<T>) -> *mut T {
