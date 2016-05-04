@@ -7,7 +7,7 @@ use std::mem;
 
 use std::cell::Cell;
 
-/// Evil: copied from [source](https://doc.rust-lang.org/src/alloc/rc.rs.html#174-178).
+/// Evil: copied from [source](https://doc.rust-lang.org/src/alloc/up/src/liballoc/rc.rs.html#174-178).
 #[allow(dead_code)]
 pub struct RcBox<T: ?Sized> {
     strong: Cell<usize>,
@@ -15,7 +15,7 @@ pub struct RcBox<T: ?Sized> {
     value: T,
 }
 
-/// Evil: copied from [source](https://doc.rust-lang.org/src/alloc/rc.rs.html#185-190) except omitting the `Shared` and just faking a raw pointer.
+/// Evil: copied from [source](https://doc.rust-lang.org/src/alloc/up/src/liballoc/rc.rs.html#186-190) except omitting the `Shared` and just faking a raw pointer.
 struct Rc<T: ?Sized> {
     _ptr: *mut RcBox<T>,
 }
