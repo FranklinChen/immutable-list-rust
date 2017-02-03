@@ -174,7 +174,7 @@ impl<T> List<T> {
     /// other than a pointer to stuff, so this should be OK.
     pub fn same(&self, other: &List<T>) -> bool {
         match (self.as_ref(), other.as_ref()) {
-            (Some(self_rc), Some(other_rc)) => rc_utils::eq(self_rc, other_rc),
+            (Some(self_rc), Some(other_rc)) => Rc::ptr_eq(self_rc, other_rc),
             (None, None) => true,
             (_, _) => false,
         }

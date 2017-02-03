@@ -20,14 +20,6 @@ struct Rc<T: ?Sized> {
     _ptr: *mut RcBox<T>,
 }
 
-/// Whether two `Rc` are the same pointer underneath.
-#[inline(always)]
-pub fn eq<T>(r1: &rc::Rc<T>, r2: &rc::Rc<T>) -> bool {
-    unsafe {
-        as_raw(r1) == as_raw(r2)
-    }
-}
-
 /// Get the raw pointer stored inside an `Rc`.
 #[inline(always)]
 unsafe fn as_raw<T>(r: &rc::Rc<T>) -> *mut RcBox<T> {
