@@ -2,6 +2,7 @@
 
 /// Use reference counting instead of GC for sharing.
 use std::rc::Rc;
+use std::mem;
 
 /// Simplest possible definition of an immutable list as in FP.
 ///
@@ -111,7 +112,10 @@ impl<T> List<T> {
             Some(r) => {
                 // New Cons, with an initially empty tail.
                 let first = Rc::new(Cons::singleton(f(&r.elem)));
-                let first_ptr = Rc::into_raw(first);
+                let first_ptr: *mut Cons<U> = unsafe {
+                    // Turn *const to just *
+                    mem::transmute(Rc::into_raw(first))
+                };
 
                 // Pointer to next in current cell.
                 // We want to write in a new next.
@@ -123,7 +127,9 @@ impl<T> List<T> {
                     let new_rc =
                         Rc::new(Cons::singleton(f(&r.elem)));
 
-                    let next_ptr = Rc::into_raw(new_rc);
+                    let next_ptr: *mut Cons<U> = unsafe {
+                        mem::transmute(Rc::into_raw(new_rc))
+                    };
 
                     // Patch in the new tail.
                     unsafe {
