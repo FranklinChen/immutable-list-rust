@@ -1,8 +1,5 @@
 //! Immmutable, persistent list as in FP languages.
 
-#![feature(ptr_eq)]
-#![feature(rc_raw)]
-
 /// Use reference counting instead of GC for sharing.
 use std::rc::Rc;
 
