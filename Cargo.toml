@@ -3,4 +3,3 @@ name = "immutable-list"
 version = "0.1.0"
 authors = ["Franklin Chen <franklinchen@franklinchen.com>"]
 readme = "README.md"
-edition = "2018"
