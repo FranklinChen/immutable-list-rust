@@ -1,8 +1,8 @@
 //! Immmutable, persistent list as in FP languages.
 
+use std::mem;
 /// Use reference counting instead of GC for sharing.
 use std::rc::Rc;
-use std::mem;
 
 /// Simplest possible definition of an immutable list as in FP.
 ///
@@ -13,13 +13,13 @@ pub struct List<T>(Option<Rc<Cons<T>>>);
 #[derive(PartialEq, Debug)]
 pub struct Cons<T> {
     elem: T,
-    next: List<T>
+    next: List<T>,
 }
 
 impl<T> Cons<T> {
     #[inline(always)]
     pub fn new(elem: T, next: List<T>) -> Self {
-        Cons { elem: elem, next: next }
+        Cons { elem, next }
     }
 
     #[inline(always)]
@@ -30,26 +30,28 @@ impl<T> Cons<T> {
 
 //TODO macro for list syntax.
 
-impl<T> List<T> {
-    #[inline(always)]
-    pub fn as_ref(&self) -> Option<&Rc<Cons<T>>> {
-        self.0.as_ref()
-    }
-
+impl<T> Clone for List<T> {
     /// Just bump up the reference count.
     #[inline(always)]
-    pub fn clone(&self) -> Self {
+    fn clone(&self) -> Self {
         List(self.0.clone())
+    }
+}
+
+impl<T> List<T> {
+    #[inline(always)]
+    pub fn try_as_ref(&self) -> Option<&Rc<Cons<T>>> {
+        self.0.as_ref()
     }
 
     #[inline(always)]
     pub fn head(&self) -> Option<&T> {
-        self.as_ref().map(|r| &r.elem)
+        self.try_as_ref().map(|r| &r.elem)
     }
 
     #[inline(always)]
     pub fn tail(&self) -> Option<&List<T>> {
-        self.as_ref().map(|r| &r.next)
+        self.try_as_ref().map(|r| &r.next)
     }
 
     /// Bump up reference count when returning the tail of the list.
@@ -85,7 +87,8 @@ impl<T> List<T> {
     /// Danger of stack overflow because of non-tail recursion.
     #[inline(always)]
     pub fn map_recursive<U, F>(&self, f: F) -> List<U>
-        where F: Fn(&T) -> U
+    where
+        F: Fn(&T) -> U,
     {
         self.map_recursive_helper(&f)
     }
@@ -95,19 +98,21 @@ impl<T> List<T> {
     /// Use `into_cons` because nobody else sees the intermediate
     /// list.
     fn map_recursive_helper<U, F>(&self, f: &F) -> List<U>
-        where F: Fn(&T) -> U
+    where
+        F: Fn(&T) -> U,
     {
-        match self.as_ref() {
+        match self.try_as_ref() {
             None => List::empty(),
-            Some(r) => r.next.map_recursive_helper(f).into_cons(f(&r.elem))
+            Some(r) => r.next.map_recursive_helper(f).into_cons(f(&r.elem)),
         }
     }
 
     /// Iterative rather than recursive.
     pub fn map<U, F>(&self, f: F) -> List<U>
-        where F: Fn(&T) -> U
+    where
+        F: Fn(&T) -> U,
     {
-        match self.as_ref() {
+        match self.try_as_ref() {
             None => List::empty(),
             Some(r) => {
                 // New Cons, with an initially empty tail.
@@ -123,18 +128,14 @@ impl<T> List<T> {
 
                 let mut self_remaining = &r.next;
 
-                while let Some(r) = self_remaining.as_ref() {
-                    let new_rc =
-                        Rc::new(Cons::singleton(f(&r.elem)));
+                while let Some(r) = self_remaining.try_as_ref() {
+                    let new_rc = Rc::new(Cons::singleton(f(&r.elem)));
 
-                    let next_ptr: *mut Cons<U> = unsafe {
-                        mem::transmute(Rc::into_raw(new_rc))
-                    };
+                    let next_ptr: *mut Cons<U> = unsafe { mem::transmute(Rc::into_raw(new_rc)) };
 
                     // Patch in the new tail.
                     unsafe {
-                        (*current_ptr).next =
-                            List(Some(Rc::from_raw(next_ptr)));
+                        (*current_ptr).next = List(Some(Rc::from_raw(next_ptr)));
                     }
 
                     current_ptr = next_ptr;
@@ -152,21 +153,22 @@ impl<T: Clone> List<T> {
     /// Append a copy of `xs` to `ys`, preserving `ys` through structural
     /// sharing.
     pub fn append(&self, other: &List<T>) -> List<T> {
-        match self.as_ref() {
-            None =>
-                match other.as_ref() {
-                    None =>
-                        List::empty(),
-                    Some(r) =>
-                        // Here's where we increase the reference count.
-                        List(Some(r.clone()))
-                },
+        match self.try_as_ref() {
+            None => match other.try_as_ref() {
+                None => List::empty(),
+                Some(r) =>
+                // Here's where we increase the reference count.
+                {
+                    List(Some(r.clone()))
+                }
+            },
             Some(r) =>
-                // Recursive append our tail, then prepend a clone of elem.
+            // Recursive append our tail, then prepend a clone of elem.
+            {
                 r.next.append(other).into_cons(r.elem.clone())
+            }
         }
     }
-
 }
 
 impl<T> List<T> {
@@ -175,7 +177,7 @@ impl<T> List<T> {
     /// Use unsafe hacking! But it is unlikely `Rc` will be anything
     /// other than a pointer to stuff, so this should be OK.
     pub fn same(&self, other: &List<T>) -> bool {
-        match (self.as_ref(), other.as_ref()) {
+        match (self.try_as_ref(), other.try_as_ref()) {
             (Some(self_rc), Some(other_rc)) => Rc::ptr_eq(self_rc, other_rc),
             (None, None) => true,
             (_, _) => false,
@@ -189,18 +191,12 @@ mod test {
 
     /// [0, 1, 2]
     fn list_012() -> List<usize> {
-        List::empty()
-            .into_cons(2)
-            .into_cons(1)
-            .into_cons(0)
+        List::empty().into_cons(2).into_cons(1).into_cons(0)
     }
 
     /// [3, 4, 5]
     fn list_345() -> List<usize> {
-        List::empty()
-            .into_cons(5)
-            .into_cons(4)
-            .into_cons(3)
+        List::empty().into_cons(5).into_cons(4).into_cons(3)
     }
 
     fn list_012345() -> List<usize> {
@@ -275,7 +271,7 @@ mod test {
         let list1 = list_012();
         let list2 = list_345();
 
-        let result = list1.map_recursive(|x| x+3);
+        let result = list1.map_recursive(|x| x + 3);
 
         assert_eq!(result, list2);
     }
@@ -285,7 +281,7 @@ mod test {
         let list1 = list_012();
         let list2 = list_345();
 
-        let result = list1.map(|x| x+3);
+        let result = list1.map(|x| x + 3);
 
         assert_eq!(result, list2);
     }
