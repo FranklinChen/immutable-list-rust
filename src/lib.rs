@@ -28,6 +28,7 @@ impl<T> Cons<T> {
     }
 }
 
+#[macro_export]
 macro_rules! list {
     [] => (List::empty());
     [$x:expr] => (List::singleton($x));
@@ -63,7 +64,7 @@ impl<T> List<T> {
     /// Bump up reference count when returning the tail of the list.
     #[inline(always)]
     pub fn into_tail(&self) -> Option<List<T>> {
-        self.tail().map(|list| list.clone())
+        self.tail().cloned()
     }
 
     #[inline(always)]
