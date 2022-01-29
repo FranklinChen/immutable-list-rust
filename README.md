@@ -1,6 +1,6 @@
 # Rust implementation of immutable, persistent list for functional programming
 
-[![Build Status](https://travis-ci.org/FranklinChen/immutable-list-rust.svg)](https://travis-ci.org/FranklinChen/immutable-list-rust)
+![Continuous integration](https://github.com/FranklinChen/immutable-list-rust/workflows/Continuous%20integration/badge.svg)
 
 This is a sample implementation of the humble purely functional linked list.
 
