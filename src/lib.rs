@@ -28,7 +28,13 @@ impl<T> Cons<T> {
     }
 }
 
-//TODO macro for list syntax.
+macro_rules! list {
+    [] => (List::empty());
+    [$x:expr] => (List::singleton($x));
+    [$x:expr, $($xs:expr),*] => (
+        list!($($xs),*).into_cons($x)
+    )
+}
 
 impl<T> Clone for List<T> {
     /// Just bump up the reference count.
@@ -274,6 +280,25 @@ mod test {
         let result = list1.map_recursive(|x| x + 3);
 
         assert_eq!(result, list2);
+    }
+
+    #[test]
+    fn test_list_macro_empty() {
+        let l: List<i32> = list![];
+        assert_eq!(None, l.head());
+    }
+
+    #[test]
+    fn test_list_macro_one_element() {
+        let l: List<i32> = list![1];
+        assert_eq!(1, *l.head().unwrap());
+    }
+
+    #[test]
+    fn test_list_macro() {
+        let l: List<i32> = list![1, 2, 3, 4, 5];
+        assert_eq!(1, *l.head().unwrap());
+        assert_eq!(2, *l.tail().map(List::head).unwrap().unwrap());
     }
 
     #[test]
